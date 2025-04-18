@@ -1,0 +1,45 @@
+{
+  "name": "fivem-twore",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --emptyOutDir",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "i18next": "^24.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "react-i18next": "^15.4.1",
+    "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@altv/types-client": "^16.2.9",
+    "@altv/types-natives": "^16.2.1",
+    "@altv/types-server": "^16.2.6",
+    "@altv/types-shared": "^16.2.4",
+    "@altv/types-webview": "^16.2.1",
+    "@altv/types-worker": "^16.2.0",
+    "@eslint/js": "^9.21.0",
+    "@tailwindcss/forms": "^0.5.10",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}

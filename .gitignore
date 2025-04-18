@@ -1,0 +1,78 @@
+*/binaries/*
+*/tools/*
+.env
+crawl_py_files.py
+server.txt
+*cache*
+.replxx_history
+
+# node_modules
+node_modules
+package-lock.json
+yarn.lock
+npm-debug.log
+# IDE files
+*.iml
+.idea/
+.vscode/
+# OS files
+.DS_Store
+Thumbs.db
+# Logs
+logs
+*.log
+*/logs/*
+
+fivem/
+
+db/
+txData/
+fivem.zip
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+# Build output
+dist/
+dist-ssr/
+.vite/
+build/
+
+# Environment files
+.env
+.env.local
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+coverage/
+*.lcov
+
+# Lua specific
+client/backup.lua
+client/messed.lua
+
+# Temporary files
+*~
+*.tmp
+
+# Lockfiles - keep one consistent package manager
+yarn.lock
