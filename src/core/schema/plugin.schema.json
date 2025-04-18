@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plugin Manifest Schema",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-.+)?$" },
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "exports": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "server": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      },
+      "additionalProperties": false,
+      "default": {}
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    }
+  },
+  "required": ["name", "version"],
+  "additionalProperties": false
+}

@@ -7,7 +7,20 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   build: {
-    outDir: '../../dist/web',
+    // Output build to dist/web relative to project root (src is Vite root)
+    // Ensure dist/web is emptied prior to building, even if outside root
+    emptyOutDir: true,
+    outDir: '../dist/web',
     assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        // Separate vendor code into its own chunk
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
+      },
+    },
   },
 });
