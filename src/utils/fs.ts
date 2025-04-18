@@ -52,7 +52,7 @@ export async function collectFiles(dir: string, base: string): Promise<string[]>
 
 /**
  * Recursively transpile all .ts files under dir to .js,
- * targeting ES2020 and ESNext modules. Removes original .ts files.
+ * targeting ES2017 and preserving ESNext modules. Removes original .ts files.
  */
 export async function transpileTsFiles(dir: string): Promise<void> {
   try {
@@ -64,7 +64,10 @@ export async function transpileTsFiles(dir: string): Promise<void> {
       } else if (entry.isFile() && fullPath.endsWith('.ts')) {
         const srcCode = await fs.readFile(fullPath, 'utf8');
         const result = ts.transpileModule(srcCode, {
-          compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
+          compilerOptions: {
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ES2017,
+          },
         });
         const outPath = fullPath.slice(0, -3) + '.js';
         await fs.writeFile(outPath, result.outputText, 'utf8');

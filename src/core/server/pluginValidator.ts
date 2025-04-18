@@ -8,15 +8,15 @@ import { loadManifest } from './manifest.ts';
  */
 export function getPluginDirs(basePath: string): string[] {
   if (!fs.existsSync(basePath)) return [];
-  const namespaces = fs.readdirSync(basePath).filter((d) =>
-    fs.statSync(path.join(basePath, d)).isDirectory(),
-  );
+  const namespaces = fs
+    .readdirSync(basePath)
+    .filter((d) => fs.statSync(path.join(basePath, d)).isDirectory());
   const pluginDirs: string[] = [];
   for (const ns of namespaces) {
     const nsPath = path.join(basePath, ns);
-    const plugins = fs.readdirSync(nsPath).filter((d) =>
-      fs.statSync(path.join(nsPath, d)).isDirectory(),
-    );
+    const plugins = fs
+      .readdirSync(nsPath)
+      .filter((d) => fs.statSync(path.join(nsPath, d)).isDirectory());
     for (const pluginName of plugins) {
       pluginDirs.push(path.join(nsPath, pluginName));
     }

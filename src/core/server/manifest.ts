@@ -1,17 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Ajv, { ErrorObject } from 'ajv';
+import * as schema from './schema/plugin.schema.json' with {
+  type: 'json',
+};
 
 // For ES2017 compatibility, use only __dirname or process.cwd()
 // This avoids using import.meta which requires newer module settings
-const schemaDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
 // Load and parse the plugin manifest JSON schema
-const schemaRaw = fs.readFileSync(
-  path.resolve(schemaDir, 'schema', 'plugin.schema.json'),
-  'utf-8'
-);
-const schema = JSON.parse(schemaRaw) as object;
 
 /**
  * Represents the shape of a plugin manifest (plugin.json).
