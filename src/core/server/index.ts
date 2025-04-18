@@ -1,4 +1,4 @@
-import { loadManifest, validateManifest, PluginManifest } from './manifest.ts';
+import { loadManifest, validateManifest, PluginManifest } from './manifest';
 
 /**
  * Core resource entry point for the hot-reload server.
@@ -67,4 +67,4 @@ export {
   getPluginDirs,
   validatePluginStructure,
   validateAllPlugins,
-} from './pluginValidator.ts';
+} from './pluginValidator';

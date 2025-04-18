@@ -1,7 +1,16 @@
-This is going to be the main resource of our server. It provides:
+**Core Plugin**
 
-- A (stub) hot-reload HTTP/WebSocket server (`startHotReloadServer` in `index.ts`).
-- Utilities to validate plugin manifests and directory layouts:
-  - JSON Schema: `schema/plugin.schema.json`
-  - Manifest loader/validator: `loadManifest`, `validateManifest`, `PluginManifest`
-  - Plugin structure checks: `getPluginDirs`, `validatePluginStructure`, `validateAllPlugins`
+The core plugin follows the standard plugin layout and provides server-side utilities:
+
+- **plugin.json**: Core plugin manifest.
+- **client/**: Client-side scripts.
+- **server/**:
+  - `index.ts`: Hot-reload HTTP/WebSocket server entrypoint.
+  - `manifest.ts`: Plugin manifest loader and validator.
+  - `pluginValidator.ts`: Plugin structure validation.
+  - `schema/plugin.schema.json`: JSON schema for plugin manifests.
+- **html/**: HTML UI files (e.g. NUI Page.tsx).
+- **translations/**: Localization resources.
+- **types/**: Shared TypeScript type definitions.
+
+Use `startHotReloadServer` from `server/index.ts` to launch the hot-reload server.

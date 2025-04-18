@@ -1,12 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import Ajv, { ErrorObject } from 'ajv';
-// Load and parse the JSON schema manually to avoid ESM import assertion issues
-// Resolve __dirname equivalent in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const schemaRaw = fs.readFileSync(path.resolve(__dirname, 'schema', 'plugin.schema.json'), 'utf-8');
+
+// For ES2017 compatibility, use only __dirname or process.cwd()
+// This avoids using import.meta which requires newer module settings
+const schemaDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
+
+// Load and parse the plugin manifest JSON schema
+const schemaRaw = fs.readFileSync(
+  path.resolve(schemaDir, 'schema', 'plugin.schema.json'),
+  'utf-8'
+);
 const schema = JSON.parse(schemaRaw) as object;
 
 /**
@@ -33,7 +37,9 @@ const validateFn = ajv.compile<PluginManifest>(schema);
  * @param data The data to validate.
  * @throws Error if validation fails.
  */
-export function validateManifest(data: unknown): asserts data is PluginManifest {
+export function validateManifest(
+  data: unknown
+): asserts data is PluginManifest {
   const valid = validateFn(data);
   if (!valid) {
     const errors = validateFn.errors as ErrorObject[];
@@ -55,7 +61,9 @@ export function loadManifest(manifestPath: string): PluginManifest {
   try {
     data = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`Failed to parse JSON at ${fullPath}: ${(err as Error).message}`);
+    throw new Error(
+      `Failed to parse JSON at ${fullPath}: ${(err as Error).message}`
+    );
   }
   validateManifest(data);
   return data;

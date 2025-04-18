@@ -10,7 +10,7 @@ import {
   startHotReloadServer,
   getPluginDirs,
   validatePluginStructure,
-} from '../core/index.ts';
+} from '../core/server/index.ts';
 // Compute the target resource directory under txData based on SERVER_NAME
 const SERVER_NAME = process.env.SERVER_NAME ?? 'default';
 /**
@@ -28,9 +28,9 @@ function getTxResourceDir(rootDir: string, ...subPaths: string[]): string {
     ...subPaths
   );
 }
-import { loadManifest } from '../core/manifest.ts';
+import { loadManifest } from '../core/server/manifest.ts';
 import { copyDir, collectFiles, transpileTsFiles } from '../utils/fs.ts';
-import type { PluginManifest } from '../core/manifest.ts';
+import type { PluginManifest } from '../core/server/manifest.ts';
 
 const program = new Command();
 
