@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Load environment variables from .env file
+import 'dotenv/config';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import chokidar from 'chokidar';
@@ -9,10 +11,26 @@ import {
   getPluginDirs,
   validatePluginStructure,
 } from '../core/index.ts';
+// Compute the target resource directory under txData based on SERVER_NAME
+const SERVER_NAME = process.env.SERVER_NAME ?? 'default';
+/**
+ * Get the output path for FiveM resources under txData/{SERVER_NAME}/resources/GENERATED
+ * @param rootDir project root directory
+ * @param subPaths additional path segments under GENERATED
+ */
+function getTxResourceDir(rootDir: string, ...subPaths: string[]): string {
+  return path.join(
+    rootDir,
+    'txData',
+    SERVER_NAME,
+    'resources',
+    '[GENERATED]',
+    ...subPaths
+  );
+}
 import { loadManifest } from '../core/manifest.ts';
 import { copyDir, collectFiles, transpileTsFiles } from '../utils/fs.ts';
 import type { PluginManifest } from '../core/manifest.ts';
-
 
 const program = new Command();
 
@@ -142,7 +160,10 @@ program
       // Build the webview bundle via Vite CLI
       console.log('Building webview via Vite (spawn)...');
       await new Promise<void>((resolve) => {
-        const p = spawn('npx', ['vite', 'build', '--emptyOutDir'], { stdio: 'inherit', shell: true });
+        const p = spawn('npx', ['vite', 'build', '--emptyOutDir'], {
+          stdio: 'inherit',
+          shell: true,
+        });
         p.on('exit', (code: number) => {
           if (code !== 0) console.warn(`Vite build exited with code ${code}`);
           resolve();
@@ -151,7 +172,8 @@ program
       // Package the build output as a FiveM NUI resource
       console.log('Packaging webview as a FiveM NUI resource...');
       const webDist = path.join(rootDir, 'dist', 'web');
-      const outDirResource = path.join(rootDir, 'dist', 'resources', 'webview');
+      // Output NUI resource under txData/{SERVER_NAME}/resources/GENERATED/webview
+      const outDirResource = getTxResourceDir(rootDir, 'webview');
       await fs.rm(outDirResource, { recursive: true, force: true });
       await fs.mkdir(outDirResource, { recursive: true });
       // First, try copying build output
@@ -159,7 +181,9 @@ program
       let resourceFiles = await collectFiles(outDirResource, outDirResource);
       // Fallback: if no build output, copy development source
       if (resourceFiles.length === 0) {
-        console.warn('No webview build output found; copying dev source as fallback');
+        console.warn(
+          'No webview build output found; copying dev source as fallback'
+        );
         // Copy fallback index.html
         try {
           await fs.copyFile(
@@ -186,7 +210,9 @@ program
         manifestLines.join('\n') + '\n',
         'utf8'
       );
-      console.log(`Webview resource built: webview (${resourceFiles.length} files)`);
+      console.log(
+        `Webview resource built: webview (${resourceFiles.length} files)`
+      );
       // Clean up temporary Vite output
       await fs.rm(webDist, { recursive: true, force: true });
     } catch (err) {
@@ -195,16 +221,21 @@ program
     }
   });
 
-// Build the core resource from src/core into dist/resources/core
+// Build the core resource from src/core into txData/{SERVER_NAME}/resources/GENERATED/core
 program
   .command('core:build')
-  .description('Compile core resource and bundle into dist/resources/core')
+  .description(
+    'Compile core resource and bundle into txData/{SERVER_NAME}/resources/GENERATED/core'
+  )
   .action(async () => {
     try {
       const rootDir = process.cwd();
       const coreSrc = path.join(rootDir, 'src', 'core');
-      const outDir = path.join(rootDir, 'dist', 'resources', 'core');
+      // Output core resource under txData/{SERVER_NAME}/resources/GENERATED/core
+      const outDir = getTxResourceDir(rootDir, 'core');
       await fs.rm(outDir, { recursive: true, force: true });
+      // Create the [GENERATED] directory if it doesn't exist
+      await fs.mkdir(path.dirname(outDir), { recursive: true });
       // Copy core source files
       await copyDir(coreSrc, outDir);
       // Transpile TypeScript to JavaScript
@@ -256,7 +287,10 @@ program
         process.exit(1);
       }
       // Resolve dependencies and determine build order (topological sort)
-      const nameMap = new Map<string, { dir: string; manifest: PluginManifest }>();
+      const nameMap = new Map<
+        string,
+        { dir: string; manifest: PluginManifest }
+      >();
       for (const p of plugins) nameMap.set(p.manifest.name, p);
       const adj = new Map<string, string[]>();
       const indegree = new Map<string, number>();
@@ -278,7 +312,8 @@ program
       }
       const queue: string[] = [];
       for (const [n, deg] of indegree) if (deg === 0) queue.push(n);
-      const sortedPlugins: Array<{ dir: string; manifest: PluginManifest }> = [];
+      const sortedPlugins: Array<{ dir: string; manifest: PluginManifest }> =
+        [];
       while (queue.length > 0) {
         const cur = queue.shift()!;
         const p = nameMap.get(cur)!;
@@ -292,9 +327,12 @@ program
         console.error('Circular plugin dependency detected');
         process.exit(1);
       }
-      const distBase = path.join(rootDir, 'dist', 'resources');
-      await fs.rm(distBase, { recursive: true, force: true });
+
+      // Base directory for plugin resources under txData/{SERVER_NAME}/resources/GENERATED
+      const distBase = getTxResourceDir(rootDir);
+      // Ensure the resources directory exists
       await fs.mkdir(distBase, { recursive: true });
+
       // Build each plugin resource in dependency order
       for (const { dir, manifest } of sortedPlugins) {
         const resourceName = manifest.name.replace(/[:]/g, '_');
@@ -365,14 +403,80 @@ program
         });
       });
     try {
+      // Create [GENERATED] directory if it doesn't exist
+      const generatedDir = path.join(
+        rootDir,
+        'txData',
+        SERVER_NAME,
+        'resources',
+        '[GENERATED]'
+      );
+      await fs.mkdir(generatedDir, { recursive: true });
+
+      // Ensure server.cfg has "ensure GENERATED" above the "## Permissions ##" section
+      const serverCfgPath = path.join(
+        rootDir,
+        'txData',
+        SERVER_NAME,
+        'server.cfg'
+      );
+      try {
+        await fs.access(serverCfgPath);
+        const content = await fs.readFile(serverCfgPath, 'utf8');
+        const lines = content.split(/\r?\n/);
+        const hasEnsure = lines.some((l) => l.trim() === 'ensure [GENERATED]');
+        const permIdx = lines.findIndex((l) => l.includes('## Permissions'));
+        if (!hasEnsure && permIdx !== -1) {
+          lines.splice(permIdx, 0, 'ensure [GENERATED]');
+          await fs.writeFile(serverCfgPath, lines.join('\n'), 'utf8');
+          console.log(`Added "ensure [GENERATED]" to ${serverCfgPath}`);
+        }
+      } catch {
+        // server.cfg not present or unreadable; skip
+      }
+
       console.log('Running initial builds...');
+      await runScript('core:build'); // Build the core resource first
       await runScript('webview:build');
       await runScript('script:build');
       console.log('Initial builds completed.');
+
+      // Restart Docker containers to ensure they load the latest built resources
+      console.log('Restarting Docker containers...');
+      try {
+        const dockerDown = spawn('docker-compose', ['down'], {
+          stdio: 'inherit',
+          shell: true,
+        });
+        await new Promise<void>((resolve, reject) => {
+          dockerDown.on('exit', (code: number) => {
+            if (code === 0) resolve();
+            else
+              reject(new Error(`docker-compose down exited with code ${code}`));
+          });
+        });
+
+        const dockerUp = spawn('docker-compose', ['up', '--build', '-d'], {
+          stdio: 'inherit',
+          shell: true,
+        });
+        await new Promise<void>((resolve, reject) => {
+          dockerUp.on('exit', (code: number) => {
+            if (code === 0) resolve();
+            else
+              reject(new Error(`docker-compose up exited with code ${code}`));
+          });
+        });
+        console.log('Docker containers restarted successfully.');
+      } catch (err) {
+        console.error('Docker restart failed:', err);
+        process.exit(1);
+      }
     } catch (err) {
       console.error('Initial build failed:', err);
       process.exit(1);
     }
+
     console.log('Starting hot-reload server...');
     // Optionally read a restart command from env var, e.g. FIVEM_RESTART_CMD="fivem-cli restart resource"
     const restartCmdEnv = process.env.FIVEM_RESTART_CMD;
@@ -382,6 +486,24 @@ program
     const debounceTime = 500;
     let webviewTimer: NodeJS.Timeout;
     let scriptTimer: NodeJS.Timeout;
+    let coreTimer: NodeJS.Timeout;
+
+    // Watch core files for rebuilds
+    chokidar
+      .watch(path.join(rootDir, 'src', 'core', '**/*'), { ignoreInitial: true })
+      .on('all', (_event, changedPath) => {
+        console.log(`Detected change in ${changedPath}, rebuilding core...`);
+        clearTimeout(coreTimer);
+        coreTimer = setTimeout(async () => {
+          try {
+            await runScript('core:build');
+            console.log('Core rebuild completed.');
+          } catch (err) {
+            console.error('Core rebuild error:', err);
+          }
+        }, debounceTime);
+      });
+
     // Watch HTML pages for webview rebuilds
     chokidar
       .watch(`${pluginBase}/**/html/Page.tsx`, { ignoreInitial: true })

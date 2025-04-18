@@ -1,12 +1,11 @@
-version: '3'
 services:
   fivem:
     build: ./
     env_file: .env
     ports:
-      - "30120:30120/tcp"
-      - "30120:30120/udp"
-      - "40120:40120/tcp"
+      - '30120:30120/tcp'
+      - '30120:30120/udp'
+      - '40120:40120/tcp'
     volumes:
       - ./txData:/root/binaries/txData
     restart: unless-stopped
@@ -14,6 +13,16 @@ services:
     tty: true
     depends_on:
       - db
+    deploy:
+      resources:
+        limits:
+          # cpus: '3.5'
+          cpus: '6'
+          # memory: 7G
+          memory: 14G
+        reservations:
+          cpus: '6'
+          memory: 10G
 
   db:
     image: mariadb:10.5
@@ -26,7 +35,15 @@ services:
       - db_data:/var/lib/mysql
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - '3306:3306'
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 6G
+        reservations:
+          cpus: '2'
+          memory: 2G
 
 volumes:
   db_data:
