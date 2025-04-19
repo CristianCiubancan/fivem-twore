@@ -52,6 +52,18 @@
           `[${timestamp}] HTTP ${method} request from ${source} to ${path}`
         );
         console.log('Headers:', JSON.stringify(request.headers));
+        // Development endpoint: reload and refresh resources
+        if (method === 'POST' && path === '/reload-resources') {
+          logWithPrefix('Reload resources triggered via HTTP');
+          try {
+            // Refresh the server resource list
+            ExecuteCommand('refresh');
+          } catch (err) {
+            console.error(`Failed to refresh resources: ${err}`);
+          }
+          sendJsonResponse(response, 200, { success: true, action: 'refresh' });
+          return;
+        }
 
         // Handle based on HTTP method
         switch (method) {
