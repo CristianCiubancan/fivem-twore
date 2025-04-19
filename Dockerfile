@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Build arguments for URLs (these can be overridden at build time)
-ARG BINARIES_ARCHIVE_URL=https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/13068-bc8954f4d13d91a1dcda6989a4008cf459c2f941/fx.tar.xz
+ARG BINARIES_ARCHIVE_URL=https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/13890-ad6c90072e62cdb7ee0dcc943d7ded8a5107d542/fx.tar.xz
 ARG SERVER_DATA_REPO_URL=https://github.com/citizenfx/cfx-server-data
 
 # Optionally, set environment variables (if your start.sh or runtime logic requires them)
