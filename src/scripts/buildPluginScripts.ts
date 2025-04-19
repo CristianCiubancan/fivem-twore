@@ -27,14 +27,14 @@ const watch = process.argv.includes('--watch');
     ? exportsDef.server
     : [];
 
-  const environments: { name: string; options: Record<string, unknown> }[] = [];
+  const environments = [];
 
   // Server bundle: use explicit exports if provided, otherwise fallback to default entry
   const defaultServerEntry = './server/index.ts';
   if (pluginManifest.exports && Array.isArray(pluginManifest.exports.server)) {
     // explicit server exports defined
     if (serverExports.length > 0) {
-      const entryPoints = serverExports.map((p: string) => `./${p}`);
+      const entryPoints = serverExports.map((p: unknown) => `./${p}`);
       environments.push({ name: 'server', options: { entryPoints } });
     }
   } else if (existsSync(path.join(cwd, 'server', 'index.ts'))) {
@@ -50,7 +50,7 @@ const watch = process.argv.includes('--watch');
   if (pluginManifest.exports && Array.isArray(pluginManifest.exports.client)) {
     // explicit client exports defined
     if (clientExports.length > 0) {
-      const entryPoints = clientExports.map((p: string) => `./${p}`);
+      const entryPoints = clientExports.map((p: unknown) => `./${p}`);
       environments.push({ name: 'client', options: { entryPoints } });
     }
   } else if (existsSync(path.join(cwd, 'client', 'index.ts'))) {
@@ -79,47 +79,65 @@ const watch = process.argv.includes('--watch');
     });
   }
 
-  // Copy Lua scripts from shared, server, client, and locales folders into dist
+  // Copy Lua scripts and JSON files from shared, server, client, and locales folders into dist
   const luaScriptPaths: string[] = [];
-  // Directories to search for Lua scripts: shared config, server scripts, client scripts, localization files
-  const luaDirs = ['shared', 'server', 'client', 'locales'];
-  for (const dirName of luaDirs) {
+  const jsonFilePaths: string[] = [];
+  // Directories to search for Lua scripts and JSON files
+  const searchDirs = ['shared', 'server', 'client', 'locales'];
+  for (const dirName of searchDirs) {
     const srcDir = path.join(cwd, dirName);
     if (!existsSync(srcDir)) continue;
-    const collectLua = (dirPath: string) => {
+    const collectFiles = (dirPath: string) => {
       for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
         const fullPath = path.join(dirPath, entry.name);
         if (entry.isDirectory()) {
-          collectLua(fullPath);
-        } else if (entry.isFile() && entry.name.endsWith('.lua')) {
+          collectFiles(fullPath);
+        } else if (entry.isFile()) {
           const relPath = path.relative(cwd, fullPath).replace(/\\/g, '/');
-          luaScriptPaths.push(relPath);
           const destPath = path.join(distDir, relPath);
           mkdirSync(path.dirname(destPath), { recursive: true });
-          copyFileSync(fullPath, destPath);
+
+          if (entry.name.endsWith('.lua')) {
+            luaScriptPaths.push(relPath);
+            copyFileSync(fullPath, destPath);
+          } else if (entry.name.endsWith('.json')) {
+            jsonFilePaths.push(relPath);
+            copyFileSync(fullPath, destPath);
+          }
         }
       }
     };
-    collectLua(srcDir);
+    collectFiles(srcDir);
   }
 
   // Generate fxmanifest.lua in dist
   process.chdir(distDir);
-  // Prepare script entries for fxmanifest.lua
+  // Prepare script entries for fxmanifest.lua, ensuring shared and locale files load before code
   const clientScripts = [
+    // Shared config (available to client)
+    ...luaScriptPaths.filter((p: string) => p.startsWith('shared/')),
+    // Locale files (initialize Lang)
+    ...luaScriptPaths.filter((p: string) => p.startsWith('locales/')),
+    // Compiled client JS (if any)
     ...(existsSync(path.join(distDir, 'client.js')) ? ['client.js'] : []),
-    ...luaScriptPaths.filter((p) => p.startsWith('shared/')),
-    ...luaScriptPaths.filter((p) => p.startsWith('client/')),
-    ...luaScriptPaths.filter((p) => p.startsWith('locales/')),
+    // Client Lua scripts
+    ...luaScriptPaths.filter((p: string) => p.startsWith('client/')),
   ];
   const serverScripts = [
+    // Shared config
+    ...luaScriptPaths.filter((p: string) => p.startsWith('shared/')),
+    // Locale files (initialize Lang)
+    ...luaScriptPaths.filter((p: string) => p.startsWith('locales/')),
+    // Compiled server JS (if any)
     ...(existsSync(path.join(distDir, 'server.js')) ? ['server.js'] : []),
-    ...luaScriptPaths.filter((p) => p.startsWith('shared/')),
-    ...luaScriptPaths.filter((p) => p.startsWith('server/')),
-    ...luaScriptPaths.filter((p) => p.startsWith('locales/')),
+    // Server Lua scripts
+    ...luaScriptPaths.filter((p: string) => p.startsWith('server/')),
   ];
-  const files: string[] = [];
-  const dependencies: string[] = Array.isArray(pluginManifest.dependencies)
+
+  // Include JSON files in the 'files' array for fxmanifest.lua
+  const files = jsonFilePaths;
+
+  const dependencies = Array.isArray(pluginManifest.dependencies)
     ? pluginManifest.dependencies
     : [];
   const metadata = {

@@ -1,4 +1,7 @@
 {
-  "name": "testp:samplep",
-  "version": "0.1.0"
+  "name": "qb_multicharacter",
+  "version": "1.0.0",
+  "description": "QB-Multicharacter",
+  "author": "",
+  "dependencies": ["qb-core", "oxmysql"]
 }
