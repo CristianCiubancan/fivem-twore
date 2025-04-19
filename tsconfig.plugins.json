@@ -13,7 +13,8 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noUnusedLocals": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types", "node_modules/@citizenfx"]
   },
   "include": ["./src/plugins/**/*"],
   "exclude": ["./src/plugins/**/html/**/*"]

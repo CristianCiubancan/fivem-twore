@@ -1,70 +1,161 @@
-import { loadManifest, validateManifest, PluginManifest } from './manifest.ts';
-
+/// <reference types="@citizenfx/server" />
 /**
- * Core resource entry point for the hot-reload server.
+ * FiveM Resource HTTP Server
+ * This resource creates a simple HTTP server that logs all incoming requests
  */
-import http from 'node:http';
-import path from 'node:path';
-import chokidar from 'chokidar';
-import { WebSocketServer, WebSocket } from 'ws';
-import { spawn } from 'node:child_process';
 
-/**
- * Starts a hot-reload HTTP/WebSocket server.
- * Watches file changes under src directory, broadcasts 'reload' messages,
- * and can optionally run a command (e.g. to restart a resource).
- * @param options.rootDir The root directory containing the src folder to watch (defaults to current working directory).
- * @param options.port TCP port for WebSocket server (defaults to 3414).
- * @param options.restartCommand Optional shell command args to run on change (e.g. ['fivem-cli','restart','resource']).
- */
-export function startHotReloadServer(
-  options: { rootDir?: string; port?: number; restartCommand?: string[] } = {}
-): void {
-  const root = options.rootDir ?? process.cwd();
-  const srcDir = path.resolve(root, 'src');
+// Wrap everything in a namespace or IIFE to avoid global scope pollution
+(function () {
+  // Configuration
+  const PORT = GetConvar('http_server_port', '50120');
+  const HOST = GetConvar('http_server_host', '0.0.0.0');
 
-  const port = options.port ?? 3414;
-  const server = http.createServer();
-  const wss = new WebSocketServer({ server });
+  // Server instance flag
+  let httpServerActive = false;
 
-  server.listen(port, () =>
-    console.log(`Hot-reload server listening on ws://localhost:${port}`)
-  );
+  // Log with resource name prefix
+  function logWithPrefix(message: string): void {
+    console.log(`[${GetCurrentResourceName()}] ${message}`);
+  }
 
-  wss.on('connection', (_socket: WebSocket) => {
-    console.log('Client connected for hot-reload');
+  // On resource start
+  on('onResourceStart', (resourceName: string) => {
+    if (GetCurrentResourceName() !== resourceName) return;
+    logWithPrefix(`Starting HTTP server on ${HOST}:${PORT}`);
+    startHttpServer();
   });
 
-  // Set up watcher to only watch changes under the src directory
-  const watcher = chokidar.watch(srcDir, {
-    ignoreInitial: true,
-    persistent: true,
+  // On resource stop
+  on('onResourceStop', (resourceName: string) => {
+    if (GetCurrentResourceName() !== resourceName) return;
+    logWithPrefix('Stopping HTTP server');
+    stopHttpServer();
   });
 
-  watcher.on('all', (event: string, changedPath: string) => {
-    console.log(`File changed: ${changedPath} (${event}); broadcasting reload`);
+  /**
+   * Starts the HTTP server
+   */
+  function startHttpServer(): void {
+    try {
+      // Set flag to indicate server is running
+      httpServerActive = true;
 
-    for (const client of wss.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send('reload');
+      // Set up the server handler
+      SetHttpHandler((request, response) => {
+        const timestamp = new Date().toISOString();
+        const method = request.method;
+        const path = request.path;
+        const source = request.address;
+
+        // Log the request
+        logWithPrefix(
+          `[${timestamp}] HTTP ${method} request from ${source} to ${path}`
+        );
+        console.log('Headers:', JSON.stringify(request.headers));
+
+        // Handle based on HTTP method
+        switch (method) {
+          case 'GET':
+            handleGetRequest(request, response);
+            break;
+          case 'POST':
+            handlePostRequest(request, response);
+            break;
+          default:
+            sendJsonResponse(response, 405, { error: 'Method Not Allowed' });
+            break;
+        }
+      });
+
+      logWithPrefix(`HTTP server started successfully on ${HOST}:${PORT}`);
+    } catch (error) {
+      console.error(`Failed to start HTTP server: ${error}`);
+      httpServerActive = false;
+    }
+  }
+
+  /**
+   * Stops the HTTP server
+   */
+  function stopHttpServer(): void {
+    try {
+      // Just set the flag to indicate server is no longer active
+      httpServerActive = false;
+      logWithPrefix('HTTP server stopped');
+    } catch (error) {
+      console.error(`Error stopping HTTP server: ${error}`);
+    }
+  }
+
+  /**
+   * Helper to send JSON responses
+   */
+  function sendJsonResponse(
+    response: any,
+    statusCode: number,
+    data: any
+  ): void {
+    response.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(data));
+  }
+
+  /**
+   * Handles GET requests
+   */
+  function handleGetRequest(request: any, response: any): void {
+    if (request.path === '/') {
+      sendJsonResponse(response, 200, {
+        status: 'online',
+        timestamp: new Date().toISOString(),
+        message: 'FiveM HTTP Server is running',
+      });
+    } else if (request.path.startsWith('/api/')) {
+      sendJsonResponse(response, 200, {
+        endpoint: request.path,
+        message: 'API endpoint hit',
+      });
+    } else {
+      sendJsonResponse(response, 404, { error: 'Not Found' });
+    }
+  }
+
+  /**
+   * Handles POST requests
+   */
+  function handlePostRequest(request: any, response: any): void {
+    let body = '';
+
+    request.on('data', (chunk: string) => {
+      body += chunk;
+    });
+
+    request.on('end', () => {
+      logWithPrefix('Received POST data: ' + body);
+
+      try {
+        const data = JSON.parse(body);
+        sendJsonResponse(response, 200, {
+          success: true,
+          received: data,
+        });
+      } catch (error) {
+        sendJsonResponse(response, 400, {
+          error: 'Invalid JSON',
+          message: error.message,
+        });
       }
-    }
+    });
+  }
 
-    // Optionally run a restart command (e.g. restart FiveM resource)
-    if (options.restartCommand) {
-      const [cmd, ...args] = options.restartCommand;
-      const proc = spawn(cmd, args, { stdio: 'inherit', shell: true });
-      proc.on('exit', (code: number) =>
-        console.log(`Restart command exited with code ${code}`)
-      );
-    }
+  // Export public functions
+  exports('getServerStatus', () => {
+    return {
+      running: httpServerActive,
+      port: PORT,
+      host: HOST,
+    };
   });
-}
 
-export { loadManifest, validateManifest };
-export type { PluginManifest };
-export {
-  getPluginDirs,
-  validatePluginStructure,
-  validateAllPlugins,
-} from './pluginValidator.ts';
+  // Log that the resource has loaded
+  logWithPrefix('HTTP Server resource loaded');
+})();

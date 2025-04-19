@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@citizenfx/client':
+        specifier: 2.0.14318-1
+        version: 2.0.14318-1
+      '@citizenfx/server':
+        specifier: 2.0.14318-1
+        version: 2.0.14318-1
       chokidar:
         specifier: ^3.5.3
         version: 3.6.0
@@ -198,6 +204,12 @@ packages:
   '@babel/types@7.27.0':
     resolution: {integrity: sha512-H45s8fVLYjbhFH62dIJ3WtmJ6RSPt/3DRO0ZcT2SUiYiQyz3BLVb9ADEnLl91m74aQPS3AzzeajZHYOalWe3bg==}
     engines: {node: '>=6.9.0'}
+
+  '@citizenfx/client@2.0.14318-1':
+    resolution: {integrity: sha512-8qkXyJIOmOqFR3Bm/P99p7H49wmCNQqOtr2YGmhc7FlznirUQC5qx7Qauuxnl8B7Sj/6RQGOY4t1LIA3U87gmA==}
+
+  '@citizenfx/server@2.0.14318-1':
+    resolution: {integrity: sha512-k8kvAOcekV/omKsf5oYISRpDawi5A7NOv46U7Y2oYaq2XHIfoJok143cb49MHO4IOaXTU2y/QJw2ADzpX+ESfw==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1848,6 +1860,10 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
+
+  '@citizenfx/client@2.0.14318-1': {}
+
+  '@citizenfx/server@2.0.14318-1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:

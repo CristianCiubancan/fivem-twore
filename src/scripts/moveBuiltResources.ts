@@ -38,7 +38,7 @@ import { exists } from './utils.js';
   }
 
   // Move each built resource (excluding scripts) into the server resources folder
-  const movedResources: string[] = [];
+  const movedResources = [];
   for (const entry of distEntries) {
     if (!entry.isDirectory() || entry.name === 'scripts') {
       continue;
@@ -58,7 +58,7 @@ import { exists } from './utils.js';
     }
   }
 
-  // Update server.cfg to ensure [GENERATED] resources are loaded
+  // Update server.cfg to ensure [GENERATED] resources are loaded and add TCP endpoint
   const cfgPath = path.join(serverDir, 'server.cfg');
   let cfgText;
   try {
@@ -68,11 +68,29 @@ import { exists } from './utils.js';
     process.exit(1);
   }
 
-  // First, check if we already have an ensure [GENERATED] line
-  const lines = cfgText.split('\n');
+  // Split the config into lines for easier manipulation
+  let lines = cfgText.split('\n');
+
+  // Check for existing ensure [GENERATED] line
   let hasGeneratedEnsure = lines.some((line) =>
     line.trim().startsWith('ensure [GENERATED]')
   );
+
+  // Check for existing endpoint_add_tcp line
+  let hasEndpointTcp = lines.some((line) =>
+    line.trim().startsWith('endpoint_add_tcp "0.0.0.0:50120"')
+  );
+
+  let configUpdated = false;
+
+  // If we don't have the TCP endpoint, add it at the top of the file
+  if (!hasEndpointTcp) {
+    lines.unshift('endpoint_add_tcp "0.0.0.0:50120"');
+    console.log(
+      'Added endpoint_add_tcp "0.0.0.0:50120" to the top of server.cfg'
+    );
+    configUpdated = true;
+  }
 
   // If we don't have an ensure [GENERATED] line and we have moved resources, add it
   if (!hasGeneratedEnsure && movedResources.length > 0) {
@@ -95,15 +113,20 @@ import { exists } from './utils.js';
     }
 
     console.log('Added ensure [GENERATED] to server.cfg');
+    configUpdated = true;
   }
 
-  const newCfg = lines.join('\n');
-
-  try {
-    await writeFile(cfgPath, newCfg, 'utf8');
-    console.log('Updated server.cfg.');
-  } catch (err) {
-    console.error(`Failed to write server.cfg at: ${cfgPath}`, err);
-    process.exit(1);
+  // Only write the file if we actually made changes
+  if (configUpdated) {
+    const newCfg = lines.join('\n');
+    try {
+      await writeFile(cfgPath, newCfg, 'utf8');
+      console.log('Updated server.cfg.');
+    } catch (err) {
+      console.error(`Failed to write server.cfg at: ${cfgPath}`, err);
+      process.exit(1);
+    }
+  } else {
+    console.log('No changes needed to server.cfg');
   }
 })();
