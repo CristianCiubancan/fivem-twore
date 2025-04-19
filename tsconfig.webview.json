@@ -25,6 +25,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/webview/**/*", "src/plugins/**/html/**/*", "src/utils/**/*"],
+  "include": [
+    "src/webview/**/*",
+    "src/plugins/**/html/**/*",
+    "src/utils/**/*",
+    "src/webview/tailwind.config.js"
+  ],
   "exclude": ["src/webview/App.tsx"]
 }

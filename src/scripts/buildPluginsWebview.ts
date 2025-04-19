@@ -53,7 +53,10 @@ const watch = process.argv.includes('--watch');
       await exec('npx vite build');
     }
   } catch (err) {
-    console.warn('Warning: Vite build failed, proceeding to generate fxmanifest:', err);
+    console.warn(
+      'Warning: Vite build failed, proceeding to generate fxmanifest:',
+      err
+    );
   }
 
   // Generate fxmanifest for the webview resource
@@ -65,7 +68,7 @@ const watch = process.argv.includes('--watch');
   process.chdir(webviewDist);
   // Collect webview resource files: index.html and all assets without duplicates or './' prefixes
   const assetFiles = await getFiles('assets');
-  const files = ['index.html', ...assetFiles];
+  const files = ['index.html', ...assetFiles.map((file) => './' + file)];
   const resourceName = path.basename(webviewDist);
   await createFxmanifest({
     client_scripts: [],
