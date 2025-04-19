@@ -74,5 +74,7 @@ const watch = process.argv.includes('--watch');
     files: ['index.html', 'assets/**/*'],
     dependencies: [],
     metadata: { ui_page: 'index.html', name: resourceName },
+    shared_scripts: [],
+    ui_page: 'index.html',
   });
 })();

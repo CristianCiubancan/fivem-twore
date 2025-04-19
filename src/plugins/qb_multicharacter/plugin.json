@@ -3,5 +3,14 @@
   "version": "1.0.0",
   "description": "QB-Multicharacter",
   "author": "",
-  "dependencies": ["qb-core", "oxmysql"]
+  "shared_scripts": [
+    "@qb-core/shared/locale.lua",
+    "locales/en.lua",
+    "locales/*.lua",
+    "shared/config.lua"
+  ],
+  "client_scripts": ["client/main.lua"],
+  "server_scripts": ["server/main.lua"],
+
+  "dependencies": ["qb-core", "qb-spawn"]
 }
