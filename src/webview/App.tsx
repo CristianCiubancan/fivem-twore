@@ -3,8 +3,8 @@ import Page_testp_samplep from '../plugins/[testp]/samplep/html/Page.tsx';
 
 const App = () => {
   return (
-    <div>
-      <div key="testp/samplep"><Page_testp_samplep /></div>
+    <div className="h-dvh">
+<Page_testp_samplep />
     </div>
   );
 };

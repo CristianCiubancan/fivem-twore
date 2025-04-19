@@ -2,14 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply text-base;
-  }
-}
-
 body {
-  font-family: 'Libre Baskerville', serif;
-  font-weight: 400;
-  font-style: normal;
+  min-height: 100vh;
+  max-height: 100vh;
+  height: 100vh;
+  overflow: auto;
 }

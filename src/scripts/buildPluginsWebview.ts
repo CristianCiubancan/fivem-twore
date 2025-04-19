@@ -36,9 +36,9 @@ const watch = process.argv.includes('--watch');
   for (const page of pages) {
     content += `import ${page.importName} from '${page.importPath}';\n`;
   }
-  content += `\nconst App = () => {\n  return (\n    <div>\n`;
+  content += `\nconst App = () => {\n  return (\n    <div className="h-dvh">\n`;
   for (const page of pages) {
-    content += `      <div key=\"${page.key}\"><${page.importName} /></div>\n`;
+    content += `<${page.importName} />\n`;
   }
   content += `    </div>\n  );\n};\n\nexport default App;\n`;
   const appFile = path.join('src', 'webview', 'App.tsx');
