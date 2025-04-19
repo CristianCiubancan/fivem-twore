@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs';
 import { readJson } from './readJson.js';
 import { createFxmanifest } from './fxmanifest.js';
 import { createBuilder } from './esbuild.js';
@@ -68,10 +68,39 @@ const watch = process.argv.includes('--watch');
     });
   }
 
+  // Copy Lua scripts from server and client folders into dist
+  const luaScriptPaths: string[] = [];
+  const luaDirs = ['server', 'client'];
+  for (const dirName of luaDirs) {
+    const srcDir = path.join(cwd, dirName);
+    if (!existsSync(srcDir)) continue;
+    const collectLua = (dirPath: string) => {
+      for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+        const fullPath = path.join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+          collectLua(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith('.lua')) {
+          const relPath = path.relative(cwd, fullPath).replace(/\\/g, '/');
+          luaScriptPaths.push(relPath);
+          const destPath = path.join(distDir, relPath);
+          mkdirSync(path.dirname(destPath), { recursive: true });
+          copyFileSync(fullPath, destPath);
+        }
+      }
+    };
+    collectLua(srcDir);
+  }
+
   // Generate fxmanifest.lua in dist
   process.chdir(distDir);
-  const clientScripts = existsSync(path.join(distDir, 'client.js')) ? ['client.js'] : [];
-  const serverScripts = existsSync(path.join(distDir, 'server.js')) ? ['server.js'] : [];
+  const clientScripts = [
+    ...(existsSync(path.join(distDir, 'client.js')) ? ['client.js'] : []),
+    ...luaScriptPaths.filter((p) => p.startsWith('client/')),
+  ];
+  const serverScripts = [
+    ...(existsSync(path.join(distDir, 'server.js')) ? ['server.js'] : []),
+    ...luaScriptPaths.filter((p) => p.startsWith('server/')),
+  ];
   const files: string[] = [];
   const dependencies: string[] = Array.isArray(pluginManifest.dependencies)
     ? pluginManifest.dependencies

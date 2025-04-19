@@ -203,9 +203,9 @@ async function fetchAvailableResources() {
   }
 })();
 
-// Watch plugin scripts (TS/JSON) for rebuild
+// Watch plugin scripts (TS, JSON, and Lua) for rebuild
 chokidar
-  .watch([`${pluginBase}/**/*.{ts,json}`], {
+  .watch([`${pluginBase}/**/*.{ts,json,lua}`], {
     ignoreInitial: true,
     ignored: outputPaths,
   })
