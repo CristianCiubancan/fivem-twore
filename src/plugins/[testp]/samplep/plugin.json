@@ -1,12 +1,4 @@
 {
   "name": "testp:samplep",
-  "version": "0.1.0",
-  "description": "",
-  "author": "",
-  "dependencies": [],
-  "exports": {
-    "client": ["client/index.ts"],
-    "server": []
-  },
-  "permissions": []
+  "version": "0.1.0"
 }
