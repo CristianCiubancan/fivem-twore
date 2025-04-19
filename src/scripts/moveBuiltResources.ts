@@ -76,21 +76,7 @@ import { exists } from './utils.js';
     line.trim().startsWith('ensure [GENERATED]')
   );
 
-  // Check for existing endpoint_add_tcp line
-  let hasEndpointTcp = lines.some((line) =>
-    line.trim().startsWith('endpoint_add_tcp "0.0.0.0:50120"')
-  );
-
   let configUpdated = false;
-
-  // If we don't have the TCP endpoint, add it at the top of the file
-  if (!hasEndpointTcp) {
-    lines.unshift('endpoint_add_tcp "0.0.0.0:50120"');
-    console.log(
-      'Added endpoint_add_tcp "0.0.0.0:50120" to the top of server.cfg'
-    );
-    configUpdated = true;
-  }
 
   // If we don't have an ensure [GENERATED] line and we have moved resources, add it
   if (!hasGeneratedEnsure && movedResources.length > 0) {
