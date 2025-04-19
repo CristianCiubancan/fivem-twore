@@ -108,7 +108,9 @@ const watch = process.argv.includes('--watch');
   // Prepare script entries for fxmanifest.lua
   const clientScripts = [
     ...(existsSync(path.join(distDir, 'client.js')) ? ['client.js'] : []),
+    ...luaScriptPaths.filter((p) => p.startsWith('shared/')),
     ...luaScriptPaths.filter((p) => p.startsWith('client/')),
+    ...luaScriptPaths.filter((p) => p.startsWith('locales/')),
   ];
   const serverScripts = [
     ...(existsSync(path.join(distDir, 'server.js')) ? ['server.js'] : []),
