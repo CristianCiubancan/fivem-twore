@@ -17,7 +17,9 @@ const watch = process.argv.includes('--watch');
     process.exit(0);
   }
   for (const pluginDir of pluginDirs) {
-    const relDir = path.relative(pluginBase, pluginDir);
+    // Determine plugin relative path and clean namespace brackets for output
+    const relDirRaw = path.relative(pluginBase, pluginDir);
+    const relDir = relDirRaw.replace(/\[|\]/g, '');
     const destDir = path.join('dist', relDir);
     if (!watch) {
       await rm(destDir, { recursive: true, force: true });

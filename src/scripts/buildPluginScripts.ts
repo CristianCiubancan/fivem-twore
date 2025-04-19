@@ -79,9 +79,10 @@ const watch = process.argv.includes('--watch');
     });
   }
 
-  // Copy Lua scripts from server and client folders into dist
+  // Copy Lua scripts from shared, server, client, and locales folders into dist
   const luaScriptPaths: string[] = [];
-  const luaDirs = ['server', 'client'];
+  // Directories to search for Lua scripts: shared config, server scripts, client scripts, localization files
+  const luaDirs = ['shared', 'server', 'client', 'locales'];
   for (const dirName of luaDirs) {
     const srcDir = path.join(cwd, dirName);
     if (!existsSync(srcDir)) continue;
@@ -104,13 +105,16 @@ const watch = process.argv.includes('--watch');
 
   // Generate fxmanifest.lua in dist
   process.chdir(distDir);
+  // Prepare script entries for fxmanifest.lua
   const clientScripts = [
     ...(existsSync(path.join(distDir, 'client.js')) ? ['client.js'] : []),
     ...luaScriptPaths.filter((p) => p.startsWith('client/')),
   ];
   const serverScripts = [
     ...(existsSync(path.join(distDir, 'server.js')) ? ['server.js'] : []),
+    ...luaScriptPaths.filter((p) => p.startsWith('shared/')),
     ...luaScriptPaths.filter((p) => p.startsWith('server/')),
+    ...luaScriptPaths.filter((p) => p.startsWith('locales/')),
   ];
   const files: string[] = [];
   const dependencies: string[] = Array.isArray(pluginManifest.dependencies)
