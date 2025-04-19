@@ -10,7 +10,7 @@ export default defineConfig({
     // Output build to dist/web relative to project root (src is Vite root)
     // Ensure dist/web is emptied prior to building, even if outside root
     emptyOutDir: true,
-    outDir: '../dist/web',
+    outDir: '../dist/webview',
     assetsDir: 'assets',
     rollupOptions: {
       output: {

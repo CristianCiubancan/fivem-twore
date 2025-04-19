@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    // Removed composite/incremental build to ensure fresh emit when outDir is cleaned
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "outDir": "dist/scripts",
+    "rootDir": "src/scripts",
+    "strict": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/scripts/**/*"]
+}

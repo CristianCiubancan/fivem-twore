@@ -5,7 +5,7 @@
   "author": "",
   "dependencies": [],
   "exports": {
-    "client": [],
+    "client": ["client/index.ts"],
     "server": []
   },
   "permissions": []

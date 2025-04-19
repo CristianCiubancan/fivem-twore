@@ -1,9 +1,10 @@
 {
-  "name": "core",
-  "version": "0.1.0",
-  "description": "",
+  "name": "fivem-twore:core",
+  "version": "0.0.1",
+  "description": "Core plugin for fivem-twore",
   "author": "",
   "dependencies": [],
-  "exports": { "client": [], "server": [] },
-  "permissions": []
+  "exports": {
+    "server": ["server/index.ts"]
+  }
 }
