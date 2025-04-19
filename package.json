@@ -10,7 +10,7 @@
     "core:build": "node dist/scripts/buildCorePlugin.js",
     "plugins:build": "node dist/scripts/buildPluginsScripts.js",
     "move:build": "node dist/scripts/moveBuiltResources.js",
-    "dev": "",
+    "dev": "pnpm scripts:build && pnpm build && node dist/scripts/dev.js",
     "build": "pnpm scripts:build && pnpm webview:build && pnpm core:build && pnpm plugins:build && pnpm move:build"
   },
   "dependencies": {
