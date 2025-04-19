@@ -4,6 +4,10 @@ import { rm, mkdir, readdir, rename } from 'node:fs/promises';
 import chokidar from 'chokidar';
 import { discoverPlugins } from './discoverPlugins.js';
 import { exec } from './utils.js';
+import CoreManager from './coreManagerScript.js';
+
+// Initialize the resource manager
+const resourceManager = new CoreManager();
 
 // Paths to built script routines
 const scriptsDist = path.resolve(process.cwd(), 'dist', 'scripts');
@@ -44,6 +48,41 @@ function debounce(key: string, fn: () => Promise<void>, delay = 100) {
   timers.set(key, t);
 }
 
+// Restart a resource after rebuild
+async function restartResource(resourceName: string) {
+  try {
+    // Check if the resource exists before attempting to restart
+    const exists = await resourceManager.resourceExists(resourceName);
+    if (!exists) {
+      console.log(
+        `[dev] resource '${resourceName}' not found, skipping restart`
+      );
+      return;
+    }
+
+    console.log(`[dev] restarting resource: ${resourceName}`);
+    const result = await resourceManager.restartResource(resourceName);
+
+    if (result.success) {
+      console.log(`[dev] resource '${resourceName}' restarted successfully`);
+    } else {
+      console.error(
+        `[dev] failed to restart resource '${resourceName}': ${result.message}`
+      );
+    }
+  } catch (error) {
+    console.error(`[dev] error restarting resource '${resourceName}':`, error);
+  }
+}
+
+// Extract resource name from plugin directory
+function getResourceNameFromPluginDir(pluginDir: string): string {
+  // Get the plugin name from the directory (last part of the path)
+  const pluginName = path.basename(pluginDir);
+  // Convert to resource name format (could be customized based on your naming convention)
+  return `${pluginName}`;
+}
+
 // Rebuild a single plugin and move its outputs
 async function rebuildPlugin(pluginDir: string) {
   const rel = path.relative(pluginBase, pluginDir);
@@ -56,21 +95,27 @@ async function rebuildPlugin(pluginDir: string) {
   await exec(`cd "${pluginDir}" && node "${buildPluginScripts}"`);
   // move built files
   const srcDist = path.join(pluginDir, 'dist');
-    try {
-      const files = await readdir(srcDist);
-      for (const file of files) {
-        await rename(path.join(srcDist, file), path.join(dest, file));
-      }
-      console.log(`[dev] plugin rebuilt: ${rel}`);
-      // Move updated resources to server
-      try {
-        await rebuildResources();
-      } catch (err) {
-        console.error('[dev] failed moving built resources after plugin rebuild:', err);
-      }
-    } catch (err) {
-      console.error(`[dev] failed moving build for plugin ${rel}:`, err);
+  try {
+    const files = await readdir(srcDist);
+    for (const file of files) {
+      await rename(path.join(srcDist, file), path.join(dest, file));
     }
+    console.log(`[dev] plugin rebuilt: ${rel}`);
+    // Move updated resources to server
+    try {
+      await rebuildResources();
+      // Restart the corresponding resource
+      const resourceName = getResourceNameFromPluginDir(pluginDir);
+      await restartResource(resourceName);
+    } catch (err) {
+      console.error(
+        '[dev] failed moving built resources after plugin rebuild:',
+        err
+      );
+    }
+  } catch (err) {
+    console.error(`[dev] failed moving build for plugin ${rel}:`, err);
+  }
 }
 
 // Rebuild the core plugin
@@ -81,8 +126,13 @@ async function rebuildCore() {
   // Move updated resources to server
   try {
     await rebuildResources();
+    // Restart the core resource
+    await restartResource('core');
   } catch (err) {
-    console.error('[dev] failed moving built resources after core rebuild:', err);
+    console.error(
+      '[dev] failed moving built resources after core rebuild:',
+      err
+    );
   }
 }
 
@@ -94,8 +144,13 @@ async function rebuildWebview() {
   // Move updated resources to server
   try {
     await rebuildResources();
+    // Restart the webview resource
+    await restartResource('webview');
   } catch (err) {
-    console.error('[dev] failed moving built resources after webview rebuild:', err);
+    console.error(
+      '[dev] failed moving built resources after webview rebuild:',
+      err
+    );
   }
 }
 
@@ -109,10 +164,27 @@ async function rebuildResources() {
   console.log('[dev] resources moved');
 }
 
+// Get a list of all resources on startup for validation purposes
+let availableResources: string[] = [];
+async function fetchAvailableResources() {
+  try {
+    availableResources = await resourceManager.getResources();
+    console.log(
+      `[dev] discovered ${availableResources.length} resources on the server`
+    );
+  } catch (error) {
+    console.error('[dev] failed to fetch available resources:', error);
+  }
+}
+
 // Perform an initial build of core, all plugins, webview, and move resources
 (async () => {
   isBuilding = true;
   console.log('[dev] performing initial build');
+
+  // First fetch available resources
+  await fetchAvailableResources();
+
   try {
     // Core plugin
     await rebuildCore();
@@ -195,6 +267,26 @@ chokidar
         isBuilding = false;
       }
     });
+  });
+
+// Add a new watcher for specific resources that might be rebuilt outside our normal workflow
+chokidar
+  .watch(['dist/**/*'], {
+    ignoreInitial: true,
+    ignored: [...outputPaths, 'dist/scripts/**'],
+  })
+  .on('all', (event, filePath) => {
+    if (isBuilding) return;
+
+    // Extract potential resource name from the path
+    const relativePath = path.relative(distDir, path.dirname(filePath));
+    const potentialResource = relativePath.split(path.sep)[0];
+
+    if (potentialResource && potentialResource !== 'scripts') {
+      debounce(`resource-${potentialResource}`, async () => {
+        await restartResource(potentialResource);
+      });
+    }
   });
 
 console.log(

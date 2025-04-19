@@ -73,7 +73,7 @@ const watch = process.argv.includes('--watch');
   await createFxmanifest({
     client_scripts: [],
     server_scripts: [],
-    files,
+    files: ['index.html', 'assets/**/*'],
     dependencies: [],
     metadata: { ui_page: 'index.html', name: resourceName },
   });
