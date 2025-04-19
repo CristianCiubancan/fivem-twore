@@ -11,7 +11,7 @@ const API_KEY = process.env.API_KEY || 'your-secure-api-key';
 // File watcher for auto-reload on rebuilds
 const WATCH_PATHS = ['dist'];
 const WATCH_INTERVAL = 2000; // Check every 2 seconds
-let lastModifiedTimes = new Map<string, number>();
+const lastModifiedTimes = new Map<string, number>();
 
 // Function to get all resource names
 function getAllResources(): string[] {
@@ -252,12 +252,13 @@ function checkForChanges(): void {
             }
           }
         } catch (error) {
+          console.error(`[auto-reload] Error checking file ${file}:`, error);
           // File might have been deleted or is inaccessible
         }
       });
 
       // Handle deleted files (they won't be in the new list)
-      for (const [existingFile, _] of lastModifiedTimes) {
+      for (const [existingFile] of lastModifiedTimes) {
         if (
           !files.includes(existingFile) &&
           fs.existsSync(path.dirname(existingFile))
@@ -346,6 +347,7 @@ RegisterCommand(
 
     // Log details of any failed restarts
     Object.entries(result.results)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .filter(([_, success]) => !success)
       .forEach(([resource]) => {
         console.log(`Failed to restart resource: ${resource}`);

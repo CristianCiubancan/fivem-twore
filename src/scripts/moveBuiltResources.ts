@@ -69,10 +69,10 @@ import { exists } from './utils.js';
   }
 
   // Split the config into lines for easier manipulation
-  let lines = cfgText.split('\n');
+  const lines = cfgText.split('\n');
 
   // Check for existing ensure [GENERATED] line
-  let hasGeneratedEnsure = lines.some((line) =>
+  const hasGeneratedEnsure = lines.some((line) =>
     line.trim().startsWith('ensure [GENERATED]')
   );
 

@@ -2,7 +2,7 @@
 import path from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { discoverPlugins } from './discoverPlugins.js';
-import { exists, exec, getFiles } from './utils.js';
+import { exists, exec } from './utils.js';
 import { createFxmanifest } from './fxmanifest.js';
 
 /**
@@ -67,8 +67,6 @@ const watch = process.argv.includes('--watch');
   }
   process.chdir(webviewDist);
   // Collect webview resource files: index.html and all assets without duplicates or './' prefixes
-  const assetFiles = await getFiles('assets');
-  const files = ['index.html', ...assetFiles.map((file) => './' + file)];
   const resourceName = path.basename(webviewDist);
   await createFxmanifest({
     client_scripts: [],

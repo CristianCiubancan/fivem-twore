@@ -14,15 +14,20 @@ const watch = process.argv.includes('--watch');
   try {
     pluginManifest = await readJson(manifestPath);
   } catch (err) {
+    console.log(err);
     console.error(`plugin.json not found or invalid at ${manifestPath}`);
     process.exit(1);
   }
 
   const exportsDef = pluginManifest.exports || {};
-  const clientExports = Array.isArray(exportsDef.client) ? exportsDef.client : [];
-  const serverExports = Array.isArray(exportsDef.server) ? exportsDef.server : [];
+  const clientExports = Array.isArray(exportsDef.client)
+    ? exportsDef.client
+    : [];
+  const serverExports = Array.isArray(exportsDef.server)
+    ? exportsDef.server
+    : [];
 
-  const environments: { name: string; options: Record<string, any> }[] = [];
+  const environments: { name: string; options: Record<string, unknown> }[] = [];
 
   // Server bundle: use explicit exports if provided, otherwise fallback to default entry
   const defaultServerEntry = './server/index.ts';
@@ -34,7 +39,10 @@ const watch = process.argv.includes('--watch');
     }
   } else if (existsSync(path.join(cwd, 'server', 'index.ts'))) {
     // no explicit exports => build default server entry if it exists
-    environments.push({ name: 'server', options: { entryPoints: [defaultServerEntry] } });
+    environments.push({
+      name: 'server',
+      options: { entryPoints: [defaultServerEntry] },
+    });
   }
 
   // Client bundle: use explicit exports if provided, otherwise fallback to default entry
@@ -47,7 +55,10 @@ const watch = process.argv.includes('--watch');
     }
   } else if (existsSync(path.join(cwd, 'client', 'index.ts'))) {
     // no explicit exports => build default client entry if it exists
-    environments.push({ name: 'client', options: { entryPoints: [defaultClientEntry] } });
+    environments.push({
+      name: 'client',
+      options: { entryPoints: [defaultClientEntry] },
+    });
   }
 
   // Ensure dist directory

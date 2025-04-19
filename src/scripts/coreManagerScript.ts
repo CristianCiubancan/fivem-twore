@@ -152,7 +152,7 @@ class CoreManager {
    * @param message - A context message for the error
    * @param error - The error object
    */
-  private handleError(message: string, error: any): void {
+  private handleError(message: string, error: unknown): void {
     if (axios.isAxiosError(error)) {
       if (error.response) {
         // The request was made and the server responded with a status code
