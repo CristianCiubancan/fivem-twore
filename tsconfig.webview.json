@@ -30,6 +30,5 @@
     "src/plugins/**/html/**/*",
     "src/utils/**/*",
     "src/webview/tailwind.config.js"
-  ],
-  "exclude": ["src/webview/App.tsx"]
+  ]
 }

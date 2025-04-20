@@ -5,12 +5,15 @@ import App from './App.tsx';
 import { isEnvBrowser } from '../utils/misc.ts';
 import { setupDevTools, simulateNuiEvent } from '../utils/devtools.ts';
 import './i18n';
+import { MenuProvider } from './context/MenuContext.tsx';
 
 // Initialize the app
 const initApp = () => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App />
+      <MenuProvider>
+        <App />
+      </MenuProvider>
     </StrictMode>
   );
 
