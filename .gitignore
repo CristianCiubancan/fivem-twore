@@ -77,3 +77,6 @@ client/messed.lua
 # Lockfiles - keep one consistent package manager
 yarn.lock
 .yarn.installed
+
+crawl.py
+crawled.txt
