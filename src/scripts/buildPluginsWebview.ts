@@ -73,7 +73,7 @@ const watch = process.argv.includes('--watch');
     server_scripts: [],
     files: ['index.html', 'assets/**/*'],
     dependencies: [],
-    metadata: { ui_page: 'index.html', name: resourceName },
+    metadata: { name: resourceName },
     shared_scripts: [],
     ui_page: 'index.html',
   });
