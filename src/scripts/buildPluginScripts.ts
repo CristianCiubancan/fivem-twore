@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { existsSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, copyFileSync, writeFileSync } from 'node:fs';
 import { readJson } from './readJson.js';
 import { createFxmanifest } from './fxmanifest.js';
 import { createBuilder } from './esbuild.js';
@@ -167,34 +167,78 @@ const watch = process.argv.includes('--watch');
     ...luaScriptPaths.filter((p) => p.startsWith('server/')),
   ];
 
-  // Handle HTML/UI files if present
-  const ui_page = pluginManifest.ui_page || null;
-
-  // Include all HTML/UI files in the 'files' array for fxmanifest.lua
+  // Handle plugin-specific UI pages: generate HTML if a Page.tsx exists under html/
+  let ui_page: string | null = null;
   const htmlFiles: string[] = [];
-  if (ui_page) {
-    const uiDir = path.dirname(ui_page);
-    const uiFullPath = path.join(cwd, uiDir);
-    if (existsSync(uiFullPath)) {
-      const collectUiFiles = (dirPath: string) => {
-        for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
-          const fullPath = path.join(dirPath, entry.name);
-          if (entry.isDirectory()) {
-            collectUiFiles(fullPath);
-          } else if (entry.isFile()) {
-            const relPath = path.relative(cwd, fullPath).replace(/\\/g, '/');
-            const destPath = path.join(distDir, relPath);
-            mkdirSync(path.dirname(destPath), { recursive: true });
-            copyFileSync(fullPath, destPath);
-            htmlFiles.push(relPath);
-          }
-        }
-      };
-      collectUiFiles(uiFullPath);
+  // Detect if plugin has a UI component source
+  const pageTsx = path.join(cwd, 'html', 'Page.tsx');
+  if (existsSync(pageTsx)) {
+    // Locate the built webview assets directory
+    let searchDir = cwd;
+    let webviewAssets = '';
+    while (true) {
+      const candidate = path.join(searchDir, 'dist', 'webview', 'assets');
+      if (existsSync(candidate)) {
+        webviewAssets = candidate;
+        break;
+      }
+      const parent = path.dirname(searchDir);
+      if (parent === searchDir) {
+        console.error('Could not locate webview assets directory for UI generation');
+        process.exit(1);
+      }
+      searchDir = parent;
     }
+    // Read asset filenames
+    const assets = readdirSync(webviewAssets);
+    const indexJs = assets.find(f => /^index-.*\.js$/.test(f));
+    const vendorJs = assets.find(f => /^vendor-.*\.js$/.test(f));
+    const indexCss = assets.find(f => /^index-.*\.css$/.test(f));
+    if (!indexJs || !vendorJs || !indexCss) {
+      console.error('Missing required webview assets:', assets);
+      process.exit(1);
+    }
+    // Generate the HTML template
+    const title = pluginManifest.name || 'UI Resource';
+    const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${title}</title>
+    <script
+      type="module"
+      crossorigin
+      src="http://cfx-nui-webview/assets/${indexJs}"
+    ></script>
+    <link
+      rel="modulepreload"
+      crossorigin
+      href="http://cfx-nui-webview/assets/${vendorJs}"
+    />
+    <link
+      rel="stylesheet"
+      crossorigin
+      href="http://cfx-nui-webview/assets/${indexCss}"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
+    // Write into plugin dist root
+    writeFileSync(path.join(distDir, 'index.html'), html, 'utf8');
+    ui_page = 'index.html';
+    htmlFiles.push('index.html');
   }
 
-  // Combine all files that need to be included
+  // Combine all files that need to be included (JSON/Lua and generated UI files)
   const files = [...jsonFilePaths, ...htmlFiles];
 
   const dependencies = Array.isArray(pluginManifest.dependencies)
