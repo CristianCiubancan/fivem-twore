@@ -128,6 +128,32 @@ class CoreManager {
       };
     }
   }
+  /**
+   * Start a specific resource
+   * @param resourceName - The name of the resource to start
+   * @returns Promise resolving to a success status and message
+   */
+  async startResource(
+    resourceName: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const response: AxiosResponse<RestartResourceResponse> =
+        await this.client.post(
+          `/start?resource=${encodeURIComponent(resourceName)}`
+        );
+
+      return {
+        success: response.data.success,
+        message: response.data.message,
+      };
+    } catch (error) {
+      this.handleError(`Error starting resource "${resourceName}"`, error);
+      return {
+        success: false,
+        message: `Failed to start resource "${resourceName}"`,
+      };
+    }
+  }
 
   /**
    * Utility method to check if a specific resource exists

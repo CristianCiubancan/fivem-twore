@@ -21,7 +21,9 @@ const watch = process.argv.includes('--watch');
       const importPath = path
         .relative(path.join('src', 'webview'), pageFile)
         .replace(/\\/g, '/');
-      const relPlugin = path.relative(pluginBase, pluginDir).replace(/\\/g, '/');
+      const relPlugin = path
+        .relative(pluginBase, pluginDir)
+        .replace(/\\/g, '/');
       const parts = relPlugin.split('/');
       let namespace = '';
       let pluginName = '';
@@ -35,9 +37,7 @@ const watch = process.argv.includes('--watch');
       const importName = namespace
         ? `Page_${nsClean}_${pluginName}`
         : `Page_${pluginName}`;
-      const key = namespace
-        ? `${nsClean}/${pluginName}`
-        : pluginName;
+      const key = namespace ? `${nsClean}/${pluginName}` : pluginName;
       pages.push({ importName, importPath, key });
     }
   }
@@ -85,6 +85,6 @@ const watch = process.argv.includes('--watch');
     dependencies: [],
     metadata: { name: resourceName },
     shared_scripts: [],
-    ui_page: 'index.html',
+    ui_page: undefined,
   });
 })();

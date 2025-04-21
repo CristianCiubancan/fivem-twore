@@ -1,3 +1,4 @@
 export default function Page() {
-  return <div className="h-full bg-red-500">saddsd</div>;
+  console.log('salz');
+  return <div className="h-20 bg-red-500">saddsd</div>;
 }

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 import path from 'node:path';
 import { rm, mkdir, readdir, rename } from 'node:fs/promises';
 import chokidar from 'chokidar';
 import { discoverPlugins } from './discoverPlugins.js';
-import { exec } from './utils.js';
+import { exec, exists } from './utils.js';
 import CoreManager from './coreManagerScript.js';
 
 // Initialize the resource manager
@@ -55,8 +56,19 @@ async function restartResource(resourceName: string) {
     const exists = await resourceManager.resourceExists(resourceName);
     if (!exists) {
       console.log(
-        `[dev] resource '${resourceName}' not found, skipping restart`
+        `[dev] resource '${resourceName}' not found, starting resource`
       );
+      // Start the resource if it is not already running
+      const startResult = await resourceManager.startResource(resourceName);
+      if (startResult.success) {
+        console.log(
+          `[dev] resource '${resourceName}' started successfully`
+        );
+      } else {
+        console.error(
+          `[dev] failed to start resource '${resourceName}': ${startResult.message}`
+        );
+      }
       return;
     }
 
@@ -84,7 +96,7 @@ function getResourceNameFromPluginDir(pluginDir: string): string {
 }
 
 // Rebuild a single plugin and move its outputs
-async function rebuildPlugin(pluginDir: string) {
+async function rebuildPlugin(pluginDir: string, moveResources = true) {
   const rel = path.relative(pluginBase, pluginDir);
   const dest = path.resolve('dist', rel);
   console.log(`[dev] rebuilding plugin: ${rel}`);
@@ -101,17 +113,18 @@ async function rebuildPlugin(pluginDir: string) {
       await rename(path.join(srcDist, file), path.join(dest, file));
     }
     console.log(`[dev] plugin rebuilt: ${rel}`);
-    // Move updated resources to server
-    try {
-      await rebuildResources();
-      // Restart the corresponding resource
-      const resourceName = getResourceNameFromPluginDir(pluginDir);
-      await restartResource(resourceName);
-    } catch (err) {
-      console.error(
-        '[dev] failed moving built resources after plugin rebuild:',
-        err
-      );
+    if (moveResources) {
+      try {
+        await rebuildResources();
+        // Restart the corresponding resource
+        const resourceName = getResourceNameFromPluginDir(pluginDir);
+        await restartResource(resourceName);
+      } catch (err) {
+        console.error(
+          '[dev] failed moving built resources after plugin rebuild:',
+          err
+        );
+      }
     }
   } catch (err) {
     console.error(`[dev] failed moving build for plugin ${rel}:`, err);
@@ -188,12 +201,12 @@ async function fetchAvailableResources() {
   try {
     // Core plugin
     await rebuildCore();
+    // Webview UI resource
+    await rebuildWebview();
     // All plugins
     for (const pluginDir of pluginDirs) {
       await rebuildPlugin(pluginDir);
     }
-    // Webview UI
-    await rebuildWebview();
     // Move generated resources
     await rebuildResources();
   } catch (err) {
@@ -270,6 +283,7 @@ chokidar
   });
 
 // Add a new watcher for specific resources that might be rebuilt outside our normal workflow
+// Watch generic resource rebuilds (e.g. fxserver calling refresh)
 chokidar
   .watch(['dist/**/*'], {
     ignoreInitial: true,
@@ -289,6 +303,48 @@ chokidar
     }
   });
 
+// Watch moved webview assets in server resources for plugin UI updates
+{
+  const serverName = process.env.SERVER_NAME;
+  if (serverName) {
+    const movedWebviewAssets = path.join(
+      'txData',
+      serverName,
+      'resources',
+      '[GENERATED]',
+      'webview',
+      'assets'
+    );
+    chokidar
+      .watch(`${movedWebviewAssets}/**/*`, { ignoreInitial: true })
+      .on('all', (event, filePath) => {
+        if (isBuilding) return;
+        debounce('moved-webview-assets', async () => {
+          isBuilding = true;
+          try {
+            for (const pluginDir of pluginDirs) {
+              const pageTsx = path.join(pluginDir, 'html', 'Page.tsx');
+              if (await exists(pageTsx)) {
+                await rebuildPlugin(pluginDir);
+              }
+            }
+          } catch (err) {
+            console.error(
+              '[dev] failed rebuilding plugin UIs after webview asset update:',
+              err
+            );
+          } finally {
+            isBuilding = false;
+          }
+        });
+      });
+  } else {
+    console.warn(
+      '[dev] SERVER_NAME not defined; skipping moved webview assets watcher'
+    );
+  }
+}
+
 console.log(
-  '[dev] watcher started: watching plugins, core, and webview for changes'
+  '[dev] watcher started: watching plugins, core, webview sources, and moved webview assets for plugin UI changes'
 );

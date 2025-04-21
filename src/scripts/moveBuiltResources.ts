@@ -5,7 +5,7 @@ import {
   readdir,
   rm,
   mkdir,
-  rename,
+  cp,
   readFile,
   writeFile,
 } from 'node:fs/promises';
@@ -49,7 +49,8 @@ import { exists } from './utils.js';
     try {
       await rm(destPath, { recursive: true, force: true });
       await mkdir(path.dirname(destPath), { recursive: true });
-      await rename(srcPath, destPath);
+      // Copy resource directory to server resources (preserve project dist for plugin builds)
+      await cp(srcPath, destPath, { recursive: true });
       console.log(`Moved resource '${entry.name}' to server resources.`);
       movedResources.push(entry.name);
     } catch (err) {
