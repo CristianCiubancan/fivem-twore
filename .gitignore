@@ -80,3 +80,5 @@ yarn.lock
 
 crawl.py
 crawled.txt
+
+**/temp/**/*
