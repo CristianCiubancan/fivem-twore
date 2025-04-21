@@ -19,16 +19,18 @@ const watch = process.argv.includes('--watch');
   for (const pluginDir of pluginDirs) {
     // Determine plugin relative path and clean namespace brackets for output
     const relDirRaw = path.relative(pluginBase, pluginDir);
-    const relDir = relDirRaw.replace(/\[|\]/g, '');
-    const destDir = path.join('dist', relDir);
+    const destDir = path.join('dist', relDirRaw);
     if (!watch) {
       await rm(destDir, { recursive: true, force: true });
     }
     await mkdir(destDir, { recursive: true });
-    console.log(`Building plugin: ${relDir}`);
+    console.log(`Building plugin: ${relDirRaw}`);
     // Invoke the generic build script from within the plugin directory using scripts tsconfig
     // Run the built JavaScript version of the plugin build script
-    const scriptsDistDir = path.relative(pluginDir, path.join('dist', 'scripts'));
+    const scriptsDistDir = path.relative(
+      pluginDir,
+      path.join('dist', 'scripts')
+    );
     const scriptRelJs = path.join(scriptsDistDir, 'buildPluginScripts.js');
     await exec(
       `cd ${pluginDir} && node ${scriptRelJs} ${watch ? '--watch' : ''}`
@@ -42,7 +44,10 @@ const watch = process.argv.includes('--watch');
           await rename(path.join(srcDist, file), path.join(destDir, file));
         }
       } catch (err) {
-        console.error(`Failed to move built files from ${srcDist} to ${destDir}:`, err);
+        console.error(
+          `Failed to move built files from ${srcDist} to ${destDir}:`,
+          err
+        );
         process.exit(1);
       }
     }

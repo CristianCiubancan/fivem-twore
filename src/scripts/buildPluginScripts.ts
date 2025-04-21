@@ -64,10 +64,20 @@ const watch = process.argv.includes('--watch');
     });
   }
 
-  // Ensure dist directory
+  // Ensure dist directory and subdirectories
   const distDir = path.join(cwd, 'dist');
   if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
+  }
+
+  // Create client and server directories if they don't exist
+  const clientDir = path.join(distDir, 'client');
+  const serverDir = path.join(distDir, 'server');
+  if (!existsSync(clientDir)) {
+    mkdirSync(clientDir, { recursive: true });
+  }
+  if (!existsSync(serverDir)) {
+    mkdirSync(serverDir, { recursive: true });
   }
 
   // Run build if any environments detected
@@ -122,7 +132,10 @@ const watch = process.argv.includes('--watch');
 
   // Create shared scripts list: plugin.json overrides if present, else auto-collect
   let shared_scripts: string[];
-  if (Array.isArray(pluginManifest.shared_scripts) && pluginManifest.shared_scripts.length > 0) {
+  if (
+    Array.isArray(pluginManifest.shared_scripts) &&
+    pluginManifest.shared_scripts.length > 0
+  ) {
     shared_scripts = pluginManifest.shared_scripts;
   } else {
     shared_scripts = [
@@ -135,7 +148,9 @@ const watch = process.argv.includes('--watch');
   // Prepare client scripts - only include client-specific scripts
   const clientScripts = [
     // Include compiled client JS (if any)
-    ...(existsSync(path.join(distDir, 'client.js')) ? ['client.js'] : []),
+    ...(existsSync(path.join(distDir, 'client', 'client.js'))
+      ? ['client/client.js']
+      : []),
     // Client Lua scripts
     ...luaScriptPaths.filter((p) => p.startsWith('client/')),
   ];
@@ -145,7 +160,9 @@ const watch = process.argv.includes('--watch');
     // Include any server-specific dependencies
     ...(pluginManifest.server_dependencies || []),
     // Include compiled server JS (if any)
-    ...(existsSync(path.join(distDir, 'server.js')) ? ['server.js'] : []),
+    ...(existsSync(path.join(distDir, 'server', 'server.js'))
+      ? ['server/server.js']
+      : []),
     // Server Lua scripts
     ...luaScriptPaths.filter((p) => p.startsWith('server/')),
   ];
@@ -190,13 +207,13 @@ const watch = process.argv.includes('--watch');
     ...(pluginManifest.metadata || {}),
     // fxmanifest version and game overrides
     fx_version: pluginManifest.fx_version || 'cerulean',
-    game:       pluginManifest.game      || 'gta5',
+    game: pluginManifest.game || 'gta5',
     // lua54 setting (default yes)
-    lua54:      pluginManifest.lua54      || 'yes',
+    lua54: pluginManifest.lua54 || 'yes',
     // Name, author, version, description overrides from plugin.json
-    name:        pluginManifest.name,
-    author:      pluginManifest.author,
-    version:     pluginManifest.version,
+    name: pluginManifest.name,
+    author: pluginManifest.author,
+    version: pluginManifest.version,
     description: pluginManifest.description,
   };
 

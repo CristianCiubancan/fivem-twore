@@ -21,13 +21,23 @@ const watch = process.argv.includes('--watch');
       const importPath = path
         .relative(path.join('src', 'webview'), pageFile)
         .replace(/\\/g, '/');
-      const relPlugin = path
-        .relative(pluginBase, pluginDir)
-        .replace(/\\/g, '/');
-      const [namespace, pluginName] = relPlugin.split('/');
+      const relPlugin = path.relative(pluginBase, pluginDir).replace(/\\/g, '/');
+      const parts = relPlugin.split('/');
+      let namespace = '';
+      let pluginName = '';
+      if (parts.length === 1) {
+        pluginName = parts[0];
+      } else {
+        namespace = parts[0];
+        pluginName = parts.slice(1).join('_');
+      }
       const nsClean = namespace.replace(/^\[|\]$/g, '');
-      const importName = `Page_${nsClean}_${pluginName}`;
-      const key = `${nsClean}/${pluginName}`;
+      const importName = namespace
+        ? `Page_${nsClean}_${pluginName}`
+        : `Page_${pluginName}`;
+      const key = namespace
+        ? `${nsClean}/${pluginName}`
+        : pluginName;
       pages.push({ importName, importPath, key });
     }
   }
