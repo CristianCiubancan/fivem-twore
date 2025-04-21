@@ -11,7 +11,7 @@
     "plugins:build": "node dist/scripts/buildPluginsScripts.js",
     "move:build": "node dist/scripts/moveBuiltResources.js",
     "dev": "pnpm scripts:build && node dist/scripts/dev.js",
-    "build": "pnpm scripts:build && pnpm webview:build && pnpm core:build && pnpm plugins:build"
+    "build": "pnpm scripts:build && pnpm webview:build && pnpm core:build && pnpm plugins:build && pnpm move:build"
   },
   "dependencies": {
     "axios": "^1.8.4",
